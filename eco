@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Remote Control System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .user-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .country-section {
+            margin-bottom: 2rem;
+        }
+
+        .country-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .equipment-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .equipment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .equipment-card.online {
+            border-color: #28a745;
+        }
+
+        .equipment-card.offline {
+            border-color: #dc3545;
+            opacity: 0.7;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .equipment-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .equipment-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .equipment-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+        }
+
+        .control-panel {
+            width: 800px;
+            height: 600px;
+            background: #2c3e50;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hmi-screen {
+            width: 100%;
+            height: 80%;
+            background: linear-gradient(45deg, #34495e, #2c3e50);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            color: white;
+        }
+
+        .hmi-header {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            flex: 1;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: scale(1.05);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .status-bar {
+            height: 20%;
+            background: #34495e;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .plc-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .plc-upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .admin-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .user-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .flag {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="container" style="margin-top: 5rem;">
+            <div class="login-form">
+                <h1 style="text-align: center; margin-bottom: 2rem; color: #667eea;">
+                    🏭 Industrial Remote Control
+                </h1>
+                <div class="form-group">
+                    <label for="username">사용자명</label>
+                    <input type="text" id="username" placeholder="사용자명을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" placeholder="비밀번호를 입력하세요">
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="login()">로그인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <div class="header">
+            <div class="logo">🏭 Industrial Remote Control System</div>
+            <div class="user-controls">
+                <span id="currentUser">사용자</span>
+                <button class="btn btn-primary" id="adminBtn" onclick="toggleAdmin()">관리자</button>
+                <button class="btn btn-danger" onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="container hidden">
+            <div class="admin-panel">
+                <h2 style="margin-bottom: 1rem;">👨‍💼 사용자 권한 관리</h2>
+                <div class="user-list" id="userList">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalEquipment">12</div>
+                    <div>총 장비 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="onlineEquipment">8</div>
+                    <div>온라인 장비</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="offlineEquipment">4</div>
+                    <div>오프라인 장비</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeUsers">3</div>
+                    <div>활성 사용자</div>
+                </div>
+            </div>
+
+            <!-- Equipment by Country -->
+            <div class="country-section">
+                <div class="country-header">
+                    <span class="flag">🇺🇸</span>
+                    미국 (USA)
+                </div>
+                <div class="equipment-grid" id="usaEquipment">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+
+            <div class="country-section">
+                <div class="country-header">
+                    <span class="flag">🇩🇪</span>
+                    독일 (Germany)
+                </div>
+                <div class="equipment-grid" id="germanyEquipment">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+
+            <div class="country-section">
+                <div class="country-header">
+                    <span class="flag">🇨🇳</span>
+                    중국 (China)
+                </div>
+                <div class="equipment-grid" id="chinaEquipment">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HMI Control Modal -->
+    <div id="hmiModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 id="modalTitle">HMI 제어판</h2>
+                <button class="btn btn-danger" onclick="closeModal()">✕</button>
+            </div>
+            <div class="control-panel">
+                <div class="hmi-screen">
+                    <div class="hmi-header" id="hmiTitle">Production Line Control</div>
+                    <div class="control-buttons">
+                        <button class="control-btn" onclick="toggleControl(this, 'Motor 1')">Motor 1</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Motor 2')">Motor 2</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Pump A')">Pump A</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Pump B')">Pump B</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Valve 1')">Valve 1</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Valve 2')">Valve 2</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Heater')">Heater</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Cooler')">Cooler</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Conveyor')">Conveyor</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Alarm')">Alarm</button>
+                        <button class="control-btn" onclick="emergencyStop()">🚨 Emergency</button>
+                        <button class="control-btn" onclick="resetSystem()">🔄 Reset</button>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <div>Status: <span id="systemStatus">Running</span></div>
+                    <div>Temp: <span id="temperature">25°C</span></div>
+                    <div>Pressure: <span id="pressure">1.2 bar</span></div>
+                    <div>Time: <span id="currentTime"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLC Upload Modal -->
+    <div id="plcModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>PLC 프로그램 업로드</h2>
+                <button class="btn btn-danger" onclick="closePlcModal()">✕</button>
+            </div>
+            <div class="plc-upload-area" onclick="document.getElementById('plcFile').click()">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">PLC 프로그램 파일 선택</div>
+                <div style="color: #666;">지원 형식: .s7p, .awl, .scl, .fbd</div>
+                <input type="file" id="plcFile" style="display: none;" onchange="handlePlcFile(this)" accept=".s7p,.awl,.scl,.fbd">
+            </div>
+            <div style="margin-top: 1rem;">
+                <label>
+                    <input type="checkbox" id="backupCurrent"> 현재 프로그램 백업
+                </label>
+            </div>
+            <div style="margin-top: 1rem; text-align: right;">
+                <button class="btn btn-primary" onclick="uploadPlcProgram()">업로드</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 사용자 및 장비 데이터
+        let currentUser = null;
+        let isAdmin = false;
+        let users = [
+            { id: 1, name: "김엔지니어", email: "kim@company.com", active: true, role: "engineer" },
+            { id: 2, name: "이매니저", email: "lee@company.com", active: true, role: "manager" },
+            { id: 3, name: "박기술자", email: "park@company.com", active: false, role: "technician" }
+        ];
+
+        let equipmentData = {
+            usa: [
+                { id: "USA001", name: "Production Line A", type: "HMI", plc: "S7-1500", status: "online", location: "Texas Factory" },
+                { id: "USA002", name: "Packaging System", type: "HMI", plc: "S7-1200", status: "online", location: "California Plant" },
+                { id: "USA003", name: "Quality Control", type: "PLC", plc: "S7-300", status: "offline", location: "New York Facility" }
+            ],
+            germany: [
+                { id: "GER001", name: "Assembly Line", type: "HMI", plc: "S7-1500", status: "online", location: "Munich Factory" },
+                { id: "GER002", name: "Robot Controller", type: "PLC", plc: "S7-400", status: "online", location: "Berlin Plant" },
+                { id: "GER003", name: "Testing Station", type: "HMI", plc: "S7-1200", status: "offline", location: "Hamburg Site" }
+            ],
+            china: [
+                { id: "CHN001", name: "Molding Machine", type: "HMI", plc: "S7-1500", status: "online", location: "Shanghai Factory" },
+                { id: "CHN002", name: "Sorting System", type: "PLC", plc: "S7-300", status: "offline", location: "Beijing Plant" },
+                { id: "CHN003", name: "Welding Station", type: "HMI", plc: "S7-1200", status: "online", location: "Guangzhou Site" },
+                { id: "CHN004", name: "Paint Booth", type: "HMI", plc: "S7-400", status: "online", location: "Shenzhen Factory" },
+                { id: "CHN005", name: "Inspection Line", type: "PLC", plc: "S7-1500", status: "offline", location: "Tianjin Plant" },
+                { id: "CHN006", name: "Packaging Unit", type: "HMI", plc: "S7-1200", status: "online", location: "Chengdu Site" }
+            ]
+        };
+
+        // 로그인 기능
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password) {
+                currentUser = username;
+                isAdmin = username === 'admin';
+                
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('currentUser').textContent = username;
+                
+                if (isAdmin) {
+                    document.getElementById('adminBtn').style.display = 'block';
+                } else {
+                    document.getElementById('adminBtn').style.display = 'none';
+                }
+                
+                initializeApp();
+            } else {
+                alert('사용자명과 비밀번호를 입력하세요.');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            isAdmin = false;
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // 관리자 패널
+        function toggleAdmin() {
+            const adminPanel = document.getElementById('adminPanel');
+            if (adminPanel.classList.contains('hidden')) {
+                adminPanel.classList.remove('hidden');
+                renderUserList();
+            } else {
+                adminPanel.classList.add('hidden');
+            }
+        }
+
+        function renderUserList() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = users.map(user => `
+                <div class="user-card">
+                    <div>
+                        <strong>${user.name}</strong><br>
+                        <small>${user.email}</small>
+                    </div>
+                    <div>
+                        <button class="btn ${user.active ? 'btn-danger' : 'btn-success'} btn-small" 
+                                onclick="toggleUserAccess(${user.id})">
+                            ${user.active ? '접속 차단' : '접속 허용'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleUserAccess(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.active = !user.active;
+                renderUserList();
+                alert(`${user.name}의 접속 권한이 ${user.active ? '허용' : '차단'}되었습니다.`);
+            }
+        }
+
+        // 장비 렌더링
+        function renderEquipment() {
+            Object.keys(equipmentData).forEach(country => {
+                const container = document.getElementById(`${country}Equipment`);
+                container.innerHTML = equipmentData[country].map(equipment => `
+                    <div class="equipment-card ${equipment.status}" onclick="connectToEquipment('${equipment.id}')">
+                        <div class="status-indicator ${equipment.status}"></div>
+                        <div class="equipment-name">${equipment.name}</div>
+                        <div class="equipment-details">
+                            <div>ID: ${equipment.id}</div>
+                            <div>PLC: ${equipment.plc}</div>
+                            <div>위치: ${equipment.location}</div>
+                            <div>상태: ${equipment.status === 'online' ? '온라인' : '오프라인'}</div>
+                        </div>
+                        <div class="equipment-actions">
+                            ${equipment.status === 'online' ? `
+                                <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); openHMI('${equipment.id}')">
+                                    ${equipment.type} 제어
+                                </button>
+                                <button class="btn btn-success btn-small" onclick="event.stopPropagation(); openPLC('${equipment.id}')">
+                                    PLC 업로드
+                                </button>
+                            ` : `
+                                <span style="color: #dc3545;">❌ 장비 오프라인</span>
+                            `}
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // HMI 제어
+        function openHMI(equipmentId) {
+            const equipment = findEquipment(equipmentId);
+            if (equipment && equipment.status === 'online') {
+                document.getElementById('modalTitle').textContent = `${equipment.name} - HMI 제어`;
+                document.getElementById('hmiTitle').textContent = equipment.name;
+                document.getElementById('hmiModal').style.display = 'block';
+                startStatusUpdates();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('hmiModal').style.display = 'none';
+            stopStatusUpdates();
+        }
+
+        function toggleControl(button, controlName) {
+            if (button.classList.contains('active')) {
+                button.classList.remove('active');
+                button.style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+                alert(`${controlName} 정지됨`);
+            } else {
+                button.classList.add('active');
+                alert(`${controlName} 시작됨`);
+            }
+        }
+
+        function emergencyStop() {
+            const buttons = document.querySelectorAll('.control-btn.active');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+            });
+            document.getElementById('systemStatus').textContent = 'Emergency Stop';
+            alert('🚨 비상정지가 실행되었습니다!');
+        }
+
+        function resetSystem() {
+            document.getElementById('systemStatus').textContent = 'Running';
+            alert('🔄 시스템이 리셋되었습니다.');
+        }
+
+        // PLC 업로드
+        function openPLC(equipmentId) {
+            const equipment = findEquipment(equipmentId);
+            if (equipment && equipment.status === 'online') {
+                document.getElementById('plcModal').style.display = 'block';
+                window.currentPlcEquipment = equipmentId;
+            }
+        }
+
+        function closePlcModal() {
+            document.getElementById('plcModal').style.display = 'none';
+        }
+
+        function handlePlcFile(input) {
+            const file = input.files[0];
+            if (file) {
+                const uploadArea = document.querySelector('.plc-upload-area');
+                uploadArea.innerHTML = `
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📄</div>
+                    <div style="font-size: 1.1rem; color: #28a745;">${file.name}</div>
+                    <div style="color: #666; font-size: 0.9rem;">${(file.size / 1024).toFixed(1)} KB</div>
+                `;
+            }
+        }
+
+        function uploadPlcProgram() {
+            const file = document.getElementById('plcFile').files[0];
+            const backup = document.getElementById('backupCurrent').checked;
+            
+            if (!file) {
+                alert('업로드할 파일을 선택하세요.');
+                return;
+            }
+
+            // 시뮬레이션된 업로드 과정
+            const equipment = findEquipment(window.currentPlcEquipment);
+            alert(`${equipment.name}에 PLC 프로그램을 업로드합니다...\n` +
+                  `파일: ${file.name}\n` +
+                  `백업: ${backup ? '예' : '아니오'}\n\n` +
+                  `✅ 업로드가 완료되었습니다.`);
+            
+            closePlcModal();
+        }
+
+        // 유틸리티 함수
+        function findEquipment(id) {
+            for (const country of Object.values(equipmentData)) {
+                const equipment = country.find(eq => eq.id === id);
+                if (equipment) return equipment;
+            }
+            return null;
+        }
+
+        function connectToEquipment(equipmentId) {
+            const equipment = findEquipment(equipmentId);
+            if (equipment.status === 'offline') {
+                alert(`${equipment.name} 장비가 오프라인 상태입니다.`);
+            }
+        }
+
+        // 상태 업데이트
+        let statusInterval;
+        
+        function startStatusUpdates() {
+            statusInterval = setInterval(() => {
+                const now = new Date
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Remote Control System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .user-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .country-section {
+            margin-bottom: 2rem;
+        }
+
+        .country-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .equipment-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .equipment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .equipment-card.online {
+            border-color: #28a745;
+        }
+
+        .equipment-card.offline {
+            border-color: #dc3545;
+            opacity: 0.7;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .equipment-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .equipment-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .equipment-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+        }
+
+        .control-panel {
+            width: 800px;
+            height: 600px;
+            background: #2c3e50;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hmi-screen {
+            width: 100%;
+            height: 80%;
+            background: linear-gradient(45deg, #34495e, #2c3e50);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            color: white;
+        }
+
+        .hmi-header {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            flex: 1;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: scale(1.05);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .status-bar {
+            height: 20%;
+            background: #34495e;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .plc-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .plc-upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .admin-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .user-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .flag {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="container" style="margin-top: 5rem;">
+            <div class="login-form">
+                <h1 style="text-align: center; margin-bottom: 2rem; color: #667eea;">
+                    🏭 Industrial Remote Control
+                </h1>
+                <div class="form-group">
+                    <label for="username">사용자명</label>
+                    <input type="text" id="username" placeholder="사용자명을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" placeholder="비밀번호를 입력하세요">
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="login()">로그인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <div class="header">
+            <div class="logo">🏭 Industrial Remote Control System</div>
+            <div class="user-controls">
+                <span id="currentUser">사용자</span>
+                <button class="btn btn-primary" id="adminBtn" onclick="toggleAdmin()">관리자</button>
+                <button class="btn btn-danger" onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="container hidden">
+            <div class="admin-panel">
+                <h2 style="margin-bottom: 1rem;">👨‍💼 사용자 권한 관리</h2>
+                <div class="user-list" id="userList">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalEquipment">12</div>
+                    <div>총 장비 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="onlineEquipment">8</div>
+                    <div>온라인 장비</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="offlineEquipment">4</div>
+                    <div>오프라인 장비</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeUsers">3</div>
+                    <div>활성 사용자</div>
+                </div>
+            </div>
+
+            <!-- Equipment by Country -->
+            <div class="country-section">
+                <div class="country-header">
+                    <span class="flag">🇺🇸</span>
+                    미국 (USA)
+                </div>
+                <div class="equipment-grid" id="usaEquipment">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+
+            <div class="country-section">
+                <div class="country-header">
+                    <span class="flag">🇩🇪</span>
+                    독일 (Germany)
+                </div>
+                <div class="equipment-grid" id="germanyEquipment">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+
+            <div class="country-section">
+                <div class="country-header">
+                    <span class="flag">🇨🇳</span>
+                    중국 (China)
+                </div>
+                <div class="equipment-grid" id="chinaEquipment">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HMI Control Modal -->
+    <div id="hmiModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 id="modalTitle">HMI 제어판</h2>
+                <button class="btn btn-danger" onclick="closeModal()">✕</button>
+            </div>
+            <div class="control-panel">
+                <div class="hmi-screen">
+                    <div class="hmi-header" id="hmiTitle">Production Line Control</div>
+                    <div class="control-buttons">
+                        <button class="control-btn" onclick="toggleControl(this, 'Motor 1')">Motor 1</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Motor 2')">Motor 2</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Pump A')">Pump A</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Pump B')">Pump B</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Valve 1')">Valve 1</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Valve 2')">Valve 2</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Heater')">Heater</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Cooler')">Cooler</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Conveyor')">Conveyor</button>
+                        <button class="control-btn" onclick="toggleControl(this, 'Alarm')">Alarm</button>
+                        <button class="control-btn" onclick="emergencyStop()">🚨 Emergency</button>
+                        <button class="control-btn" onclick="resetSystem()">🔄 Reset</button>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <div>Status: <span id="systemStatus">Running</span></div>
+                    <div>Temp: <span id="temperature">25°C</span></div>
+                    <div>Pressure: <span id="pressure">1.2 bar</span></div>
+                    <div>Time: <span id="currentTime"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLC Upload Modal -->
+    <div id="plcModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>PLC 프로그램 업로드</h2>
+                <button class="btn btn-danger" onclick="closePlcModal()">✕</button>
+            </div>
+            <div class="plc-upload-area" onclick="document.getElementById('plcFile').click()">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">PLC 프로그램 파일 선택</div>
+                <div style="color: #666;">지원 형식: .s7p, .awl, .scl, .fbd</div>
+                <input type="file" id="plcFile" style="display: none;" onchange="handlePlcFile(this)" accept=".s7p,.awl,.scl,.fbd">
+            </div>
+            <div style="margin-top: 1rem;">
+                <label>
+                    <input type="checkbox" id="backupCurrent"> 현재 프로그램 백업
+                </label>
+            </div>
+            <div style="margin-top: 1rem; text-align: right;">
+                <button class="btn btn-primary" onclick="uploadPlcProgram()">업로드</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 사용자 및 장비 데이터
+        let currentUser = null;
+        let isAdmin = false;
+        let users = [
+            { id: 1, name: "김엔지니어", email: "kim@company.com", active: true, role: "engineer" },
+            { id: 2, name: "이매니저", email: "lee@company.com", active: true, role: "manager" },
+            { id: 3, name: "박기술자", email: "park@company.com", active: false, role: "technician" }
+        ];
+
+        let equipmentData = {
+            usa: [
+                { id: "USA001", name: "Production Line A", type: "HMI", plc: "S7-1500", status: "online", location: "Texas Factory" },
+                { id: "USA002", name: "Packaging System", type: "HMI", plc: "S7-1200", status: "online", location: "California Plant" },
+                { id: "USA003", name: "Quality Control", type: "PLC", plc: "S7-300", status: "offline", location: "New York Facility" }
+            ],
+            germany: [
+                { id: "GER001", name: "Assembly Line", type: "HMI", plc: "S7-1500", status: "online", location: "Munich Factory" },
+                { id: "GER002", name: "Robot Controller", type: "PLC", plc: "S7-400", status: "online", location: "Berlin Plant" },
+                { id: "GER003", name: "Testing Station", type: "HMI", plc: "S7-1200", status: "offline", location: "Hamburg Site" }
+            ],
+            china: [
+                { id: "CHN001", name: "Molding Machine", type: "HMI", plc: "S7-1500", status: "online", location: "Shanghai Factory" },
+                { id: "CHN002", name: "Sorting System", type: "PLC", plc: "S7-300", status: "offline", location: "Beijing Plant" },
+                { id: "CHN003", name: "Welding Station", type: "HMI", plc: "S7-1200", status: "online", location: "Guangzhou Site" },
+                { id: "CHN004", name: "Paint Booth", type: "HMI", plc: "S7-400", status: "online", location: "Shenzhen Factory" },
+                { id: "CHN005", name: "Inspection Line", type: "PLC", plc: "S7-1500", status: "offline", location: "Tianjin Plant" },
+                { id: "CHN006", name: "Packaging Unit", type: "HMI", plc: "S7-1200", status: "online", location: "Chengdu Site" }
+            ]
+        };
+
+        // 로그인 기능
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password) {
+                currentUser = username;
+                isAdmin = username === 'admin';
+                
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('currentUser').textContent = username;
+                
+                if (isAdmin) {
+                    document.getElementById('adminBtn').style.display = 'block';
+                } else {
+                    document.getElementById('adminBtn').style.display = 'none';
+                }
+                
+                initializeApp();
+            } else {
+                alert('사용자명과 비밀번호를 입력하세요.');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            isAdmin = false;
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // 관리자 패널
+        function toggleAdmin() {
+            const adminPanel = document.getElementById('adminPanel');
+            if (adminPanel.classList.contains('hidden')) {
+                adminPanel.classList.remove('hidden');
+                renderUserList();
+            } else {
+                adminPanel.classList.add('hidden');
+            }
+        }
+
+        function renderUserList() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = users.map(user => `
+                <div class="user-card">
+                    <div>
+                        <strong>${user.name}</strong><br>
+                        <small>${user.email}</small>
+                    </div>
+                    <div>
+                        <button class="btn ${user.active ? 'btn-danger' : 'btn-success'} btn-small" 
+                                onclick="toggleUserAccess(${user.id})">
+                            ${user.active ? '접속 차단' : '접속 허용'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleUserAccess(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.active = !user.active;
+                renderUserList();
+                alert(`${user.name}의 접속 권한이 ${user.active ? '허용' : '차단'}되었습니다.`);
+            }
+        }
+
+        // 장비 렌더링
+        function renderEquipment() {
+            Object.keys(equipmentData).forEach(country => {
+                const container = document.getElementById(`${country}Equipment`);
+                container.innerHTML = equipmentData[country].map(equipment => `
+                    <div class="equipment-card ${equipment.status}" onclick="connectToEquipment('${equipment.id}')">
+                        <div class="status-indicator ${equipment.status}"></div>
+                        <div class="equipment-name">${equipment.name}</div>
+                        <div class="equipment-details">
+                            <div>ID: ${equipment.id}</div>
+                            <div>PLC: ${equipment.plc}</div>
+                            <div>위치: ${equipment.location}</div>
+                            <div>상태: ${equipment.status === 'online' ? '온라인' : '오프라인'}</div>
+                        </div>
+                        <div class="equipment-actions">
+                            ${equipment.status === 'online' ? `
+                                <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); openHMI('${equipment.id}')">
+                                    ${equipment.type} 제어
+                                </button>
+                                <button class="btn btn-success btn-small" onclick="event.stopPropagation(); openPLC('${equipment.id}')">
+                                    PLC 업로드
+                                </button>
+                            ` : `
+                                <span style="color: #dc3545;">❌ 장비 오프라인</span>
+                            `}
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // HMI 제어
+        function openHMI(equipmentId) {
+            const equipment = findEquipment(equipmentId);
+            if (equipment && equipment.status === 'online') {
+                document.getElementById('modalTitle').textContent = `${equipment.name} - HMI 제어`;
+                document.getElementById('hmiTitle').textContent = equipment.name;
+                document.getElementById('hmiModal').style.display = 'block';
+                startStatusUpdates();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('hmiModal').style.display = 'none';
+            stopStatusUpdates();
+        }
+
+        function toggleControl(button, controlName) {
+            if (button.classList.contains('active')) {
+                button.classList.remove('active');
+                button.style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+                alert(`${controlName} 정지됨`);
+            } else {
+                button.classList.add('active');
+                alert(`${controlName} 시작됨`);
+            }
+        }
+
+        function emergencyStop() {
+            const buttons = document.querySelectorAll('.control-btn.active');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+            });
+            document.getElementById('systemStatus').textContent = 'Emergency Stop';
+            alert('🚨 비상정지가 실행되었습니다!');
+        }
+
+        function resetSystem() {
+            document.getElementById('systemStatus').textContent = 'Running';
+            alert('🔄 시스템이 리셋되었습니다.');
+        }
+
+        // PLC 업로드
+        function openPLC(equipmentId) {
+            const equipment = findEquipment(equipmentId);
+            if (equipment && equipment.status === 'online') {
+                document.getElementById('plcModal').style.display = 'block';
+                window.currentPlcEquipment = equipmentId;
+            }
+        }
+
+        function closePlcModal() {
+            document.getElementById('plcModal').style.display = 'none';
+        }
+
+        function handlePlcFile(input) {
+            const file = input.files[0];
+            if (file) {
+                const uploadArea = document.querySelector('.plc-upload-area');
+                uploadArea.innerHTML = `
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📄</div>
+                    <div style="font-size: 1.1rem; color: #28a745;">${file.name}</div>
+                    <div style="color: #666; font-size: 0.9rem;">${(file.size / 1024).toFixed(1)} KB</div>
+                `;
+            }
+        }
+
+        function uploadPlcProgram() {
+            const file = document.getElementById('plcFile').files[0];
+            const backup = document.getElementById('backupCurrent').checked;
+            
+            if (!file) {
+                alert('업로드할 파일을 선택하세요.');
+                return;
+            }
+
+            // 시뮬레이션된 업로드 과정
+            const equipment = findEquipment(window.currentPlcEquipment);
+            alert(`${equipment.name}에 PLC 프로그램을 업로드합니다...\n` +
+                  `파일: ${file.name}\n` +
+                  `백업: ${backup ? '예' : '아니오'}\n\n` +
+                  `✅ 업로드가 완료되었습니다.`);
+            
+            closePlcModal();
+        }
+
+        // 유틸리티 함수
+        function findEquipment(id) {
+            for (const country of Object.values(equipmentData)) {
+                const equipment = country.find(eq => eq.id === id);
+                if (equipment) return equipment;
+            }
+            return null;
+        }
+
+        function connectToEquipment(equipmentId) {
+            const equipment = findEquipment(equipmentId);
+            if (equipment.status === 'offline') {
+                alert(`${equipment.name} 장비가 오프라인 상태입니다.`);
+            }
+        }
+
+        // 상태 업데이트
+        let statusInterval;
+        
+        function startStatusUpdates() {
+            statusInterval = setInterval(() => {
+                const now = new Date();
+                document.getElementById('currentTime').textContent = now.toLocaleTimeString('ko-KR');
+                
+                // 랜덤 센서 값 업데이트
+                const temp = (20 + Math.random() * 15).toFixed(1);
+                const pressure = (1.0 + Math.random() * 0.5).toFixed(1);
+                
+                document.getElementById('temperature').textContent = temp + '°C';
+                document.getElementById('pressure').textContent = pressure + ' bar';
+            }, 1000);
+        }
+
+        function stopStatusUpdates() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            let totalEquipment = 0;
+            let onlineEquipment = 0;
+            let offlineEquipment = 0;
+
+            Object.values(equipmentData).forEach(countryEquipment => {
+                totalEquipment += countryEquipment.length;
+                countryEquipment.forEach(equipment => {
+                    if (equipment.status === 'online') {
+                        onlineEquipment++;
+                    } else {
+                        offlineEquipment++;
+                    }
+                });
+            });
+
+            document.getElementById('totalEquipment').textContent = totalEquipment;
+            document.getElementById('onlineEquipment').textContent = onlineEquipment;
+            document.getElementById('offlineEquipment').textContent = offlineEquipment;
+            document.getElementById('activeUsers').textContent = users.filter(u => u.active).length;
+        }
+
+        // ixRouter 통신 시뮬레이션
+        function simulateIxRouterConnection(equipmentId) {
+            const equipment = findEquipment(equipmentId);
+            if (!equipment) return false;
+
+            // ixRouter를 통한 연결 시뮬레이션
+            console.log(`ixRouter를 통해 ${equipment.name} (${equipmentId})에 연결 중...`);
+            
+            // 실제 구현에서는 여기에 ixRouter API 호출이 들어갑니다
+            // Example: await ixRouterAPI.connect(equipmentId);
+            
+            return equipment.status === 'online';
+        }
+
+        // 실시간 장비 상태 모니터링
+        function monitorEquipmentStatus() {
+            setInterval(() => {
+                // 실제 구현에서는 ixRouter를 통해 장비 상태를 확인
+                Object.values(equipmentData).forEach(countryEquipment => {
+                    countryEquipment.forEach(equipment => {
+                        // 랜덤하게 장비 상태 변경 (데모용)
+                        if (Math.random() < 0.02) { // 2% 확률로 상태 변경
+                            equipment.status = equipment.status === 'online' ? 'offline' : 'online';
+                        }
+                    });
+                });
+                
+                renderEquipment();
+                updateStats();
+            }, 5000); // 5초마다 상태 확인
+        }
+
+        // 애플리케이션 초기화
+        function initializeApp() {
+            renderEquipment();
+            updateStats();
+            monitorEquipmentStatus();
+            
+            // 시간 업데이트
+            setInterval(() => {
+                const elements = document.querySelectorAll('#currentTime');
+                const now = new Date();
+                elements.forEach(el => {
+                    if (el) el.textContent = now.toLocaleTimeString('ko-KR');
+                });
+            }, 1000);
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            // ESC 키로 모달 닫기
+            if (e.key === 'Escape') {
+                closeModal();
+                closePlcModal();
+            }
+            
+            // Ctrl + A로 관리자 패널 토글 (관리자만)
+            if (e.ctrlKey && e.key === 'a' && isAdmin) {
+                e.preventDefault();
+                toggleAdmin();
+            }
+        });
+
+        // 모달 외부 클릭 시 닫기
+        window.onclick = function(event) {
+            const hmiModal = document.getElementById('hmiModal');
+            const plcModal = document.getElementById('plcModal');
+            
+            if (event.target === hmiModal) {
+                closeModal();
+            }
+            if (event.target === plcModal) {
+                closePlcModal();
+            }
+        }
+
+        // 페이지 로드 시 로그인 폼에 포커스
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('username').focus();
+            
+            // Enter 키로 로그인
+            document.getElementById('username').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('password').focus();
+                }
+            });
+            
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+        });
+
+        // 네트워크 상태 모니터링
+        window.addEventListener('online', function() {
+            console.log('네트워크 연결됨');
+            // 실제 구현에서는 ixRouter 재연결 시도
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('네트워크 연결 끊김');
+            alert('⚠️ 네트워크 연결이 끊어졌습니다. 연결을 확인해주세요.');
+        });
+
+        // 보안: 일정 시간 후 자동 로그아웃
+        let inactivityTimer;
+        const INACTIVITY_TIME = 30 * 60 * 1000; // 30분
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                alert('보안상 자동으로 로그아웃됩니다.');
+                logout();
+            }, INACTIVITY_TIME);
+        }
+
+        // 사용자 활동 감지
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keypress', resetInactivityTimer);
+        document.addEventListener('click', resetInactivityTimer);
+        document.addEventListener('scroll', resetInactivityTimer);
+
+        // 파일 드래그 앤 드롭 지원
+        function setupDragAndDrop() {
+            const uploadArea = document.querySelector('.plc-upload-area');
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
+            });
+            
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = '';
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = '';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    const fileInput = document.getElementById('plcFile');
+                    
+                    // 파일 형식 검증
+                    const allowedTypes = ['.s7p', '.awl', '.scl', '.fbd'];
+                    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                    
+                    if (allowedTypes.includes(fileExtension)) {
+                        // 파일 입력에 할당 (실제로는 FileList를 직접 할당할 수 없으므로 시뮬레이션)
+                        handlePlcFile({ files: [file] });
+                    } else {
+                        alert('지원하지 않는 파일 형식입니다.\n지원 형식: ' + allowedTypes.join(', '));
+                    }
+                }
+            });
+        }
+
+        // 초기 설정
+        setTimeout(setupDragAndDrop, 100);
+    </script>
+</body>
+</html>
